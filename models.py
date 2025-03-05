@@ -46,7 +46,7 @@ class WorkOrder(db.Model):
     description = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     status = db.Column(db.String(64), default="Pending") 
-    number_plate = db.Column(db.Integer, nullable=True)
+    number_plate = db.Column(db.String(64), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     technician_id = db.Column(db.Integer, db.ForeignKey('technician.id'), nullable=True)
     guard_id = db.Column(db.Integer, db.ForeignKey('guard.id'), nullable=True)

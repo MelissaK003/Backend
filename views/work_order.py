@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, WorkOrder, Technician, User,Billing
+from models import db, WorkOrder, Technician, User,Billing,WorkOrderPart
 
 work_order_bp = Blueprint('work_order_bp', __name__)
 
@@ -128,13 +128,23 @@ def update_work_order(work_order_id):
 def delete_work_order(work_order_id):
     work_order = WorkOrder.query.get(work_order_id)
 
-    if work_order:
+    if not work_order:
+        return jsonify({'msg': 'Work order not found'}), 404
+
+    try:
+        # Delete all related work_order_part records
+        WorkOrderPart.query.filter_by(work_order_id=work_order_id).delete()
+
+        # Delete the work order
         db.session.delete(work_order)
         db.session.commit()
+
         return jsonify({'msg': 'Work order deleted successfully'}), 200
-    else:
-        return jsonify({'msg': 'Work order not found'}), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': f'Failed to delete work order: {str(e)}'}), 500
     
+
 #Verification for checkout clearance  
 @work_order_bp.route('/checkout', methods=['POST'])
 def security_checkout():
@@ -150,26 +160,23 @@ def security_checkout():
     if not work_order:
         return jsonify({"status": "Error", "message": "Vehicle not found"}), 404
 
-    # Check if there's any pending work order for this vehicle
-    pending_work_order = WorkOrder.query.filter_by(number_plate=number_plate, status="Pending").first()
+    # Check if a billing record exists for this work order
+    billing = Billing.query.filter_by(work_order_id=work_order.id).first()
 
-    if pending_work_order:
-        # Check if a billing record exists for this work order
-        billing = Billing.query.filter_by(work_order_id=pending_work_order.id).first()
+    if not billing:
+        return jsonify({
+            "status": "Error",
+            "message": f"No billing record found for Work Order #{work_order.id}. Cannot checkout."
+        }), 403
 
-        if not billing:
-            return jsonify({
-                "status": "Error",
-                "message": f"No billing record found for Work Order #{pending_work_order.id}. Cannot checkout."
-            }), 403
+    # Check the billing payment status
+    if billing.payment_status == "Pending":
+        return jsonify({
+            "status": "Pending",
+            "message": f"Cannot checkout. Clear pending bill for Work Order #{work_order.id}"
+        }), 403
 
-        # Check if the billing record has a pending payment
-        if billing.payment_status == "Pending":
-            return jsonify({
-                "status": "Pending",
-                "message": f"Cannot checkout. Clear pending bill for Work Order #{pending_work_order.id}"
-            }), 403
-
+    # If billing is paid, clear for checkout
     return jsonify({
         "status": "Cleared",
         "message": "Vehicle is cleared for checkout"
