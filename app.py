@@ -9,7 +9,7 @@ from flask_mail import Mail, Message
 app = Flask(__name__)
 
 CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lost.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://garagedb_0xs1_user:Xh386AeUbEMXTvF7GzaKqBiPCArLin1A@dpg-cv492dlumphs73eqpngg-a.oregon-postgres.render.com/garagedb_0xs1'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
