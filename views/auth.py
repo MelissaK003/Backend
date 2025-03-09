@@ -108,7 +108,7 @@ def forgot_password():
         return jsonify({"error": "User not found"}), 404
 
     token = serializer.dumps(email, salt="password-reset")
-    reset_link = f"http://localhost:5173/reset-password/{token}"
+    reset_link = f"https://garage-automation.pages.dev/reset-password/{token}"
 
     msg = Message("Password Reset Request", sender="noreply@example.com", recipients=[email])
     msg.body = f"Click the link to reset your password: {reset_link}"
